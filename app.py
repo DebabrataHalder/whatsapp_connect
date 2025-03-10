@@ -1,27 +1,25 @@
-
 import os
-from flask import Flask, request
+from fastapi import FastAPI, Form, Depends
 from dotenv import load_dotenv
 from groq import Groq
 from twilio.twiml.messaging_response import MessagingResponse
+from fastapi.responses import PlainTextResponse
 
 # Load environment variables from .env file
 load_dotenv()
 
-app = Flask(__name__)
+# Initialize FastAPI app
+app = FastAPI()
 
 # Initialize the Groq client using the API key from the .env file
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
-@app.route("/whatsapp", methods=["POST"])
-def whatsapp():
-    # Extract the incoming WhatsApp message from the request body
-    incoming_msg = request.values.get("Body", "")
-    
+@app.post("/whatsapp", response_class=PlainTextResponse)
+def whatsapp(body: str = Form(...)):
     # Use the Groq API to generate a chat completion based on the incoming message
     chat_completion = client.chat.completions.create(
         messages=[
-            {"role": "user", "content": incoming_msg},
+            {"role": "user", "content": body},
         ],
         model="llama-3.3-70b-versatile",
     )
@@ -33,5 +31,3 @@ def whatsapp():
     
     return str(response)
 
-if __name__ == "__main__":
-    app.run(debug=True)
